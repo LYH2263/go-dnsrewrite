@@ -149,9 +149,7 @@ func overrideTTL(ans *Answer, ttl uint32) *Answer {
 }
 
 func (e *Engine) forward(ctx context.Context, up *upstream.Client, addr string, q Question) (*Answer, error) {
-	if up == nil {
-		return nil, ErrClosed
-	}
+	// BUG: 上游调用点未防护 nil / 已关闭客户端
 	uq := upstream.Question{Name: q.Name, Type: uint16(q.Type), Class: q.Class}
 	ua, err := up.Exchange(ctx, addr, uq)
 	if err != nil {
