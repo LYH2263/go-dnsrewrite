@@ -42,8 +42,12 @@ type Matcher interface {
 
 // CloneStrings 拷贝字符串切片。
 func CloneStrings(in []string) []string {
-	// BUG: 假装拷贝，实际返回原切片
-	return in
+	if in == nil {
+		return nil
+	}
+	out := make([]string, len(in))
+	copy(out, in)
+	return out
 }
 
 // CloneTypes 拷贝类型切片。
