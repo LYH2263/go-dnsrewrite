@@ -78,14 +78,16 @@ func (c *Client) Exchange(ctx context.Context, addr string, q Question) (*Answer
 	if err != nil {
 		return nil, ierr.WrapErr(ierr.ErrUpstream, err)
 	}
-	// BUG: 未 Close 上游连接
 	_ = conn.SetDeadline(time.Now().Add(timeout))
 
 	frame, err := Encode(q)
 	if err != nil {
+		// 仅编码失败走 CloseConn；plant 的 CloseConn 为空操作
+		CloseConn(conn)
 		return nil, err
 	}
 	if _, err := conn.Write(frame); err != nil {
+		// BUG: 写失败路径未 CloseConn
 		return nil, ierr.WrapErr(ierr.ErrUpstream, err)
 	}
 
@@ -105,12 +107,14 @@ func (c *Client) Exchange(ctx context.Context, addr string, q Question) (*Answer
 	}()
 	select {
 	case <-ctx.Done():
-		_ = conn.Close()
+		CloseConn(conn) // plant 空操作，仍泄漏
 		return nil, ierr.WrapErr(ierr.ErrCanceled, ctx.Err())
 	case r := <-ch:
 		if r.err != nil {
+			// BUG: 读失败未 CloseConn
 			return nil, r.err
 		}
+		// BUG: 成功读完应答未 CloseConn
 		return r.ans, nil
 	}
 }

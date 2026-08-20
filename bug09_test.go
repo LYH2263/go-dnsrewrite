@@ -1,4 +1,4 @@
-package upstream
+package dnsrewrite_test
 
 import (
 	"context"
@@ -7,6 +7,9 @@ import (
 	"io"
 	"net"
 	"testing"
+
+	"example.com/dnsrewrite"
+	"example.com/dnsrewrite/internal/upstream"
 )
 
 type trackConn struct {
@@ -20,9 +23,8 @@ func (t *trackConn) Close() error {
 }
 
 type trackDialer struct {
-	addr string
 	last *trackConn
-	real Dialer
+	real upstream.Dialer
 }
 
 func (d *trackDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
@@ -33,6 +35,14 @@ func (d *trackDialer) DialContext(ctx context.Context, network, address string) 
 	tc := &trackConn{Conn: c}
 	d.last = tc
 	return tc, nil
+}
+
+type plainDialer struct {
+	d net.Dialer
+}
+
+func (p *plainDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	return p.d.DialContext(ctx, network, address)
 }
 
 func TestBug09_UpstreamConnClosed(t *testing.T) {
@@ -54,21 +64,24 @@ func TestBug09_UpstreamConnClosed(t *testing.T) {
 		n := binary.BigEndian.Uint32(hdr[:])
 		body := make([]byte, n)
 		_, _ = io.ReadFull(conn, body)
-		ans, _ := json.Marshal(Answer{ID: 1, RCode: 0})
+		ans, _ := json.Marshal(upstream.Answer{ID: 1, RCode: 0})
 		out := make([]byte, 4+len(ans))
 		binary.BigEndian.PutUint32(out[:4], uint32(len(ans)))
 		copy(out[4:], ans)
 		_, _ = conn.Write(out)
 	}()
 
-	c := NewClient(0)
-	td := &trackDialer{real: defaultDialer(c.timeout)}
-	c.SetDialer(td)
-	_, err = c.Exchange(context.Background(), ln.Addr().String(), Question{Name: "a.local", Type: 1, Class: 1})
+	addr := ln.Addr().String()
+	e := dnsrewrite.New(dnsrewrite.WithDefaultUpstream(addr))
+	defer e.Close()
+	td := &trackDialer{real: &plainDialer{d: net.Dialer{}}}
+	e.Upstream().SetDialer(td)
+
+	_, err = e.Resolve(dnsrewrite.Question{Name: "a.local", Type: dnsrewrite.TypeA})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if td.last == nil || !td.last.closed {
-		t.Fatal("upstream connection was not Closed")
+		t.Fatal("upstream connection was not Closed after Engine.Resolve")
 	}
 }
