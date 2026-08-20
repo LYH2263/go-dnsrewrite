@@ -89,12 +89,12 @@ func fromEntry(ent *cache.Entry) *Answer {
 	ans := &Answer{
 		ID: ent.ID, RCode: RCode(ent.RCode),
 		Question: Question{Name: ent.Name, Type: RRType(ent.QType), Class: ent.QClass},
-		TTLHint: ent.TTLHint, Source: ent.Source,
+		TTLHint:  ent.TTLHint, Source: ent.Source,
 	}
 	for _, rr := range ent.Answers {
 		ans.Answers = append(ans.Answers, RR{
 			Name: rr.Name, Type: RRType(rr.Type), Class: rr.Class,
-			TTL: rr.TTL, Data: cache.CloneBytes(rr.Data),
+			TTL: rr.TTL, Data: rr.Data, // BUG: 未拷贝 RDATA
 		})
 	}
 	return ans
