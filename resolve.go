@@ -37,10 +37,7 @@ func (e *Engine) ResolveContext(ctx context.Context, q Question) (*Answer, error
 	defUp := e.defaultUpstream
 	e.mu.Unlock()
 
-	// BUG: Close 后不检查 closed/nil upstream，直接解引用
-	_ = closed
-	up.SetTimeout(0)
-	if table == nil {
+	if closed || up == nil || table == nil {
 		return nil, ErrClosed
 	}
 	if strings.TrimSpace(q.Name) == "" {
