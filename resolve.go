@@ -2,7 +2,6 @@ package dnsrewrite
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -176,7 +175,7 @@ func (e *Engine) TryResolve(ctx context.Context, name string, typ RRType) (*Reso
 	start := time.Now()
 	ans, err := e.ResolveContext(ctx, Question{Name: name, Type: typ, Class: 1})
 	if err != nil {
-		return nil, fmt.Errorf("%v", err)
+		return nil, err
 	}
 	res := &ResolveResult{
 		RCode: ans.RCode, Answers: append([]RR(nil), ans.Answers...),

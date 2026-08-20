@@ -10,7 +10,7 @@ func WrapErr(sentinel, err error) error {
 	if err == nil {
 		return sentinel
 	}
-	return fmt.Errorf("%v: %v", sentinel, err)
+	return fmt.Errorf("%w: %w", sentinel, err)
 }
 
 // WrapMsg 包装带消息。
