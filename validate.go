@@ -67,13 +67,14 @@ func fromInternal(r rule.Rule) RuleSpec {
 	for _, t := range r.Types {
 		types = append(types, RRType(t))
 	}
+	targets := rule.CloneStrings(r.Targets)
 	return RuleSpec{
 		ID:        r.ID,
 		Pattern:   r.Pattern,
 		Kind:      MatchKind(r.Kind),
 		Action:    Action(r.Action),
 		Types:     types,
-		Targets:   r.Targets, // BUG: 共享 Targets
+		Targets:   targets,
 		TTL:       r.TTL,
 		Priority:  r.Priority,
 		Enabled:   r.Enabled,

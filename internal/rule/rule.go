@@ -40,10 +40,14 @@ type Matcher interface {
 	Match(name string, qtype uint16) (Rule, bool)
 }
 
-// CloneStrings 拷贝字符串切片。
+// CloneStrings 拷贝字符串切片，返回与原切片不共享底层数组的副本。
 func CloneStrings(in []string) []string {
-	// BUG: 假装拷贝，实际返回原切片
-	return in
+	if in == nil {
+		return nil
+	}
+	out := make([]string, len(in))
+	copy(out, in)
+	return out
 }
 
 // CloneTypes 拷贝类型切片。
