@@ -2,6 +2,7 @@ package dnsrewrite
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -175,7 +176,7 @@ func (e *Engine) TryResolve(ctx context.Context, name string, typ RRType) (*Reso
 	start := time.Now()
 	ans, err := e.ResolveContext(ctx, Question{Name: name, Type: typ, Class: 1})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%v", err)
 	}
 	res := &ResolveResult{
 		RCode: ans.RCode, Answers: append([]RR(nil), ans.Answers...),
@@ -194,9 +195,9 @@ func (e *Engine) TryResolve(ctx context.Context, name string, typ RRType) (*Reso
 	return res, nil
 }
 
-func (e *Engine) bumpResolve()    { e.mu.Lock(); e.resolves++; e.mu.Unlock() }
-func (e *Engine) bumpRewrite()    { e.mu.Lock(); e.rewrites++; e.mu.Unlock() }
-func (e *Engine) bumpForward()    { e.mu.Lock(); e.forwards++; e.mu.Unlock() }
-func (e *Engine) bumpRefuse()     { e.mu.Lock(); e.refuses++; e.mu.Unlock() }
-func (e *Engine) bumpCacheHit()   { e.mu.Lock(); e.cacheHits++; e.mu.Unlock() }
-func (e *Engine) bumpUpstreamErr(){ e.mu.Lock(); e.upstreamErr++; e.mu.Unlock() }
+func (e *Engine) bumpResolve()     { e.mu.Lock(); e.resolves++; e.mu.Unlock() }
+func (e *Engine) bumpRewrite()     { e.mu.Lock(); e.rewrites++; e.mu.Unlock() }
+func (e *Engine) bumpForward()     { e.mu.Lock(); e.forwards++; e.mu.Unlock() }
+func (e *Engine) bumpRefuse()      { e.mu.Lock(); e.refuses++; e.mu.Unlock() }
+func (e *Engine) bumpCacheHit()    { e.mu.Lock(); e.cacheHits++; e.mu.Unlock() }
+func (e *Engine) bumpUpstreamErr() { e.mu.Lock(); e.upstreamErr++; e.mu.Unlock() }

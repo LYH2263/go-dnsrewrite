@@ -11,7 +11,7 @@ func wrapUpstream(err error) error {
 	if err == nil {
 		return nil
 	}
-	return ierr.WrapErr(ErrUpstream, err)
+	return fmt.Errorf("upstream: %v", err)
 }
 
 func wrapCanceled(err error) error {
