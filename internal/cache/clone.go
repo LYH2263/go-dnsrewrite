@@ -2,8 +2,12 @@ package cache
 
 // CloneBytes 拷贝字节切片。
 func CloneBytes(b []byte) []byte {
-	// BUG: 直接返回别名，与调用方共享底层数组
-	return b
+	if b == nil {
+		return nil
+	}
+	cp := make([]byte, len(b))
+	copy(cp, b)
+	return cp
 }
 
 // CloneByteSlices 拷贝 [][]byte。
