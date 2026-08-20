@@ -20,15 +20,15 @@ const (
 type Engine struct {
 	mu sync.Mutex
 
-	closed bool
-	clk    clock.Clock
-	table  *rule.Table
-	matcher rule.Matcher
+	closed          bool
+	clk             clock.Clock
+	table           *rule.Table
+	matcher         rule.Matcher
 	matcherOverride bool
 
-	up       *upstream.Client
-	cache    *cache.Cache
-	persistPath string
+	up              *upstream.Client
+	cache           *cache.Cache
+	persistPath     string
 	upstreamTimeout time.Duration
 	cacheTTL        time.Duration
 	defaultUpstream string

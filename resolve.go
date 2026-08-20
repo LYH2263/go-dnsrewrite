@@ -37,7 +37,10 @@ func (e *Engine) ResolveContext(ctx context.Context, q Question) (*Answer, error
 	defUp := e.defaultUpstream
 	e.mu.Unlock()
 
-	if closed || up == nil || table == nil {
+	// BUG: Close 后不检查 closed/nil upstream，直接解引用
+	_ = closed
+	up.SetTimeout(0)
+	if table == nil {
 		return nil, ErrClosed
 	}
 	if strings.TrimSpace(q.Name) == "" {
@@ -194,9 +197,9 @@ func (e *Engine) TryResolve(ctx context.Context, name string, typ RRType) (*Reso
 	return res, nil
 }
 
-func (e *Engine) bumpResolve()    { e.mu.Lock(); e.resolves++; e.mu.Unlock() }
-func (e *Engine) bumpRewrite()    { e.mu.Lock(); e.rewrites++; e.mu.Unlock() }
-func (e *Engine) bumpForward()    { e.mu.Lock(); e.forwards++; e.mu.Unlock() }
-func (e *Engine) bumpRefuse()     { e.mu.Lock(); e.refuses++; e.mu.Unlock() }
-func (e *Engine) bumpCacheHit()   { e.mu.Lock(); e.cacheHits++; e.mu.Unlock() }
-func (e *Engine) bumpUpstreamErr(){ e.mu.Lock(); e.upstreamErr++; e.mu.Unlock() }
+func (e *Engine) bumpResolve()     { e.mu.Lock(); e.resolves++; e.mu.Unlock() }
+func (e *Engine) bumpRewrite()     { e.mu.Lock(); e.rewrites++; e.mu.Unlock() }
+func (e *Engine) bumpForward()     { e.mu.Lock(); e.forwards++; e.mu.Unlock() }
+func (e *Engine) bumpRefuse()      { e.mu.Lock(); e.refuses++; e.mu.Unlock() }
+func (e *Engine) bumpCacheHit()    { e.mu.Lock(); e.cacheHits++; e.mu.Unlock() }
+func (e *Engine) bumpUpstreamErr() { e.mu.Lock(); e.upstreamErr++; e.mu.Unlock() }
