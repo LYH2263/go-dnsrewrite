@@ -75,12 +75,8 @@ func New(opts ...Option) *Engine {
 		e.upstreamTimeout = defaultUpstreamTimeout
 	}
 	e.up.SetTimeout(e.upstreamTimeout)
-	// BUG: 仅在显式传入非 nil Matcher 时安装；缺省/显式 nil 保持 nil
-	if e.matcherOverride {
-		// keep caller-provided matcher (may be nil)
-	} else if e.matcher == nil {
-		// intentionally leave nil
-		_ = e.table
+	if !e.matcherOverride {
+		e.matcher = e.table
 	}
 	if e.maxRules < 1 {
 		e.maxRules = defaultMaxRules
