@@ -12,14 +12,10 @@ func WaitReady(ctx context.Context, ready <-chan struct{}, timeout time.Duration
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	if err := ctx.Err(); err != nil {
-		return ierr.WrapErr(ierr.ErrCanceled, err)
-	}
+	// BUG: 忽略已取消 ctx，也不在 select 中听 Done
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 	select {
-	case <-ctx.Done():
-		return ierr.WrapErr(ierr.ErrCanceled, ctx.Err())
 	case <-ready:
 		return nil
 	case <-timer.C:
@@ -38,13 +34,10 @@ func WaitPoll(ctx context.Context, interval time.Duration, ready func() bool) er
 	t := time.NewTicker(interval)
 	defer t.Stop()
 	for {
-		select {
-		case <-ctx.Done():
-			return ierr.WrapErr(ierr.ErrCanceled, ctx.Err())
-		case <-t.C:
-			if ready != nil && ready() {
-				return nil
-			}
+		// BUG: 轮询不查 ctx
+		<-t.C
+		if ready != nil && ready() {
+			return nil
 		}
 	}
 }
