@@ -12,7 +12,10 @@ func WaitReady(ctx context.Context, ready <-chan struct{}, timeout time.Duration
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	// BUG: 忽略已取消 ctx，也不在 select 中听 Done
+	// 已取消的 ctx 立即返回，避免死等到超时才醒。
+	if err := ctx.Err(); err != nil {
+		return ierr.WrapErr(ierr.ErrCanceled, err)
+	}
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 	select {
@@ -20,6 +23,8 @@ func WaitReady(ctx context.Context, ready <-chan struct{}, timeout time.Duration
 		return nil
 	case <-timer.C:
 		return ierr.ErrTimeout
+	case <-ctx.Done():
+		return ierr.WrapErr(ierr.ErrCanceled, ctx.Err())
 	}
 }
 
@@ -31,13 +36,21 @@ func WaitPoll(ctx context.Context, interval time.Duration, ready func() bool) er
 	if ready != nil && ready() {
 		return nil
 	}
+	// 已取消的 ctx 立即返回，不进入轮询。
+	if err := ctx.Err(); err != nil {
+		return ierr.WrapErr(ierr.ErrCanceled, err)
+	}
 	t := time.NewTicker(interval)
 	defer t.Stop()
 	for {
-		// BUG: 轮询不查 ctx
-		<-t.C
-		if ready != nil && ready() {
-			return nil
+		// 轮询间隔内也要能被 ctx.Done 打断，而非死等到下一次 tick。
+		select {
+		case <-ctx.Done():
+			return ierr.WrapErr(ierr.ErrCanceled, ctx.Err())
+		case <-t.C:
+			if ready != nil && ready() {
+				return nil
+			}
 		}
 	}
 }
