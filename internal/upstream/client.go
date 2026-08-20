@@ -78,7 +78,7 @@ func (c *Client) Exchange(ctx context.Context, addr string, q Question) (*Answer
 	if err != nil {
 		return nil, ierr.WrapErr(ierr.ErrUpstream, err)
 	}
-	defer conn.Close()
+	// BUG: 未 Close 上游连接
 	_ = conn.SetDeadline(time.Now().Add(timeout))
 
 	frame, err := Encode(q)
