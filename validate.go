@@ -73,7 +73,7 @@ func fromInternal(r rule.Rule) RuleSpec {
 		Kind:      MatchKind(r.Kind),
 		Action:    Action(r.Action),
 		Types:     types,
-		Targets:   rule.CloneStrings(r.Targets),
+		Targets:   r.Targets, // BUG: 共享 Targets
 		TTL:       r.TTL,
 		Priority:  r.Priority,
 		Enabled:   r.Enabled,
