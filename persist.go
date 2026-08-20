@@ -30,19 +30,22 @@ func (e *Engine) ReloadRules(specs []RuleSpec, persistFn PersistFunc) error {
 		candidates = append(candidates, toInternal(s))
 		views = append(views, fromInternal(toInternal(s)))
 	}
-	// BUG: 先生效规则，再持久化；失败仍保留新表
-	e.table.Replace(candidates)
-	e.dirty = true
 	if persistFn != nil {
 		if err := persistFn(views); err != nil {
 			return wrapPersist(err)
 		}
 	} else if e.persistPath != "" {
+		old := e.table.List()
+		e.table.Replace(candidates)
 		if err := e.flushLocked(); err != nil {
+			e.table.Replace(old)
 			return err
 		}
+		e.dirty = false
+		return nil
 	}
-	e.dirty = persistFn == nil && e.persistPath == ""
+	e.table.Replace(candidates)
+	e.dirty = persistFn == nil
 	return nil
 }
 
