@@ -78,7 +78,8 @@ func (c *Client) Exchange(ctx context.Context, addr string, q Question) (*Answer
 	if err != nil {
 		return nil, ierr.WrapErr(ierr.ErrUpstream, err)
 	}
-	defer conn.Close()
+	// 成功读完应答、编码/写/读失败与取消路径均通过 defer CloseConn
+	defer CloseConn(conn)
 	_ = conn.SetDeadline(time.Now().Add(timeout))
 
 	frame, err := Encode(q)
@@ -105,7 +106,6 @@ func (c *Client) Exchange(ctx context.Context, addr string, q Question) (*Answer
 	}()
 	select {
 	case <-ctx.Done():
-		_ = conn.Close()
 		return nil, ierr.WrapErr(ierr.ErrCanceled, ctx.Err())
 	case r := <-ch:
 		if r.err != nil {
