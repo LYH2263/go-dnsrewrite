@@ -11,14 +11,14 @@ func (e *Engine) Close() error {
 		return nil
 	}
 	var first error
-	// BUG: 先丢规则表再 Sync，落盘为空
-	if e.table != nil {
-		e.table.Replace(nil)
-	}
 	if e.dirty || e.persistPath != "" {
 		if err := e.flushLocked(); err != nil {
 			first = err
 		}
+	}
+	// Sync 完成后再丢表与上游，避免丢配置
+	if e.table != nil {
+		e.table.Replace(nil)
 	}
 	if e.up != nil {
 		e.up.Close()
