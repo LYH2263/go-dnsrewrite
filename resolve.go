@@ -21,12 +21,8 @@ func (e *Engine) ResolveContext(ctx context.Context, q Question) (*Answer, error
 	if e == nil {
 		return nil, ErrNilEngine
 	}
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	if err := ctx.Err(); err != nil {
-		return nil, wrapCanceled(err)
-	}
+	// BUG: 忽略调用方 ctx，不响应取消
+	ctx = context.Background()
 
 	e.mu.Lock()
 	closed := e.closed
@@ -153,7 +149,7 @@ func (e *Engine) forward(ctx context.Context, up *upstream.Client, addr string, 
 		return nil, ErrClosed
 	}
 	uq := upstream.Question{Name: q.Name, Type: uint16(q.Type), Class: q.Class}
-	ua, err := up.Exchange(ctx, addr, uq)
+	ua, err := up.Exchange(context.Background(), addr, uq)
 	if err != nil {
 		return nil, wrapUpstream(err)
 	}
@@ -194,9 +190,9 @@ func (e *Engine) TryResolve(ctx context.Context, name string, typ RRType) (*Reso
 	return res, nil
 }
 
-func (e *Engine) bumpResolve()    { e.mu.Lock(); e.resolves++; e.mu.Unlock() }
-func (e *Engine) bumpRewrite()    { e.mu.Lock(); e.rewrites++; e.mu.Unlock() }
-func (e *Engine) bumpForward()    { e.mu.Lock(); e.forwards++; e.mu.Unlock() }
-func (e *Engine) bumpRefuse()     { e.mu.Lock(); e.refuses++; e.mu.Unlock() }
-func (e *Engine) bumpCacheHit()   { e.mu.Lock(); e.cacheHits++; e.mu.Unlock() }
-func (e *Engine) bumpUpstreamErr(){ e.mu.Lock(); e.upstreamErr++; e.mu.Unlock() }
+func (e *Engine) bumpResolve()     { e.mu.Lock(); e.resolves++; e.mu.Unlock() }
+func (e *Engine) bumpRewrite()     { e.mu.Lock(); e.rewrites++; e.mu.Unlock() }
+func (e *Engine) bumpForward()     { e.mu.Lock(); e.forwards++; e.mu.Unlock() }
+func (e *Engine) bumpRefuse()      { e.mu.Lock(); e.refuses++; e.mu.Unlock() }
+func (e *Engine) bumpCacheHit()    { e.mu.Lock(); e.cacheHits++; e.mu.Unlock() }
+func (e *Engine) bumpUpstreamErr() { e.mu.Lock(); e.upstreamErr++; e.mu.Unlock() }
