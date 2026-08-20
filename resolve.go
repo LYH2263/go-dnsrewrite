@@ -106,7 +106,9 @@ func (e *Engine) ResolveContext(ctx context.Context, q Question) (*Answer, error
 }
 
 func matchQuestion(m rule.Matcher, q Question) (rule.Rule, bool) {
-	// BUG: 缺省 Matcher 为 nil 仍调用 Match
+	if m == nil {
+		return rule.Rule{}, false
+	}
 	return m.Match(q.Name, uint16(q.Type))
 }
 
