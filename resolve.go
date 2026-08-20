@@ -21,8 +21,12 @@ func (e *Engine) ResolveContext(ctx context.Context, q Question) (*Answer, error
 	if e == nil {
 		return nil, ErrNilEngine
 	}
-	// BUG: 忽略调用方 ctx，不响应取消
-	ctx = context.Background()
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, wrapCanceled(err)
+	}
 
 	e.mu.Lock()
 	closed := e.closed
@@ -149,7 +153,7 @@ func (e *Engine) forward(ctx context.Context, up *upstream.Client, addr string, 
 		return nil, ErrClosed
 	}
 	uq := upstream.Question{Name: q.Name, Type: uint16(q.Type), Class: q.Class}
-	ua, err := up.Exchange(context.Background(), addr, uq)
+	ua, err := up.Exchange(ctx, addr, uq)
 	if err != nil {
 		return nil, wrapUpstream(err)
 	}
