@@ -106,9 +106,7 @@ func (e *Engine) ResolveContext(ctx context.Context, q Question) (*Answer, error
 }
 
 func matchQuestion(m rule.Matcher, q Question) (rule.Rule, bool) {
-	if m == nil {
-		return rule.Rule{}, false
-	}
+	// BUG: 缺省 Matcher 为 nil 仍调用 Match
 	return m.Match(q.Name, uint16(q.Type))
 }
 
@@ -194,9 +192,9 @@ func (e *Engine) TryResolve(ctx context.Context, name string, typ RRType) (*Reso
 	return res, nil
 }
 
-func (e *Engine) bumpResolve()    { e.mu.Lock(); e.resolves++; e.mu.Unlock() }
-func (e *Engine) bumpRewrite()    { e.mu.Lock(); e.rewrites++; e.mu.Unlock() }
-func (e *Engine) bumpForward()    { e.mu.Lock(); e.forwards++; e.mu.Unlock() }
-func (e *Engine) bumpRefuse()     { e.mu.Lock(); e.refuses++; e.mu.Unlock() }
-func (e *Engine) bumpCacheHit()   { e.mu.Lock(); e.cacheHits++; e.mu.Unlock() }
-func (e *Engine) bumpUpstreamErr(){ e.mu.Lock(); e.upstreamErr++; e.mu.Unlock() }
+func (e *Engine) bumpResolve()     { e.mu.Lock(); e.resolves++; e.mu.Unlock() }
+func (e *Engine) bumpRewrite()     { e.mu.Lock(); e.rewrites++; e.mu.Unlock() }
+func (e *Engine) bumpForward()     { e.mu.Lock(); e.forwards++; e.mu.Unlock() }
+func (e *Engine) bumpRefuse()      { e.mu.Lock(); e.refuses++; e.mu.Unlock() }
+func (e *Engine) bumpCacheHit()    { e.mu.Lock(); e.cacheHits++; e.mu.Unlock() }
+func (e *Engine) bumpUpstreamErr() { e.mu.Lock(); e.upstreamErr++; e.mu.Unlock() }

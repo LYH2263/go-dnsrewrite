@@ -20,15 +20,15 @@ const (
 type Engine struct {
 	mu sync.Mutex
 
-	closed bool
-	clk    clock.Clock
-	table  *rule.Table
-	matcher rule.Matcher
+	closed          bool
+	clk             clock.Clock
+	table           *rule.Table
+	matcher         rule.Matcher
 	matcherOverride bool
 
-	up       *upstream.Client
-	cache    *cache.Cache
-	persistPath string
+	up              *upstream.Client
+	cache           *cache.Cache
+	persistPath     string
 	upstreamTimeout time.Duration
 	cacheTTL        time.Duration
 	defaultUpstream string
@@ -75,8 +75,12 @@ func New(opts ...Option) *Engine {
 		e.upstreamTimeout = defaultUpstreamTimeout
 	}
 	e.up.SetTimeout(e.upstreamTimeout)
-	if !e.matcherOverride {
-		e.matcher = e.table
+	// BUG: 仅在显式传入非 nil Matcher 时安装；缺省/显式 nil 保持 nil
+	if e.matcherOverride {
+		// keep caller-provided matcher (may be nil)
+	} else if e.matcher == nil {
+		// intentionally leave nil
+		_ = e.table
 	}
 	if e.maxRules < 1 {
 		e.maxRules = defaultMaxRules
