@@ -78,16 +78,15 @@ func (c *Client) Exchange(ctx context.Context, addr string, q Question) (*Answer
 	if err != nil {
 		return nil, ierr.WrapErr(ierr.ErrUpstream, err)
 	}
+	// 拨号成功后，读完应答与任意错误路径都要通过 CloseConn 关掉连接，避免 TCP 泄漏。
+	defer CloseConn(conn)
 	_ = conn.SetDeadline(time.Now().Add(timeout))
 
 	frame, err := Encode(q)
 	if err != nil {
-		// 仅编码失败走 CloseConn；plant 的 CloseConn 为空操作
-		CloseConn(conn)
 		return nil, err
 	}
 	if _, err := conn.Write(frame); err != nil {
-		// BUG: 写失败路径未 CloseConn
 		return nil, ierr.WrapErr(ierr.ErrUpstream, err)
 	}
 
@@ -107,14 +106,11 @@ func (c *Client) Exchange(ctx context.Context, addr string, q Question) (*Answer
 	}()
 	select {
 	case <-ctx.Done():
-		CloseConn(conn) // plant 空操作，仍泄漏
 		return nil, ierr.WrapErr(ierr.ErrCanceled, ctx.Err())
 	case r := <-ch:
 		if r.err != nil {
-			// BUG: 读失败未 CloseConn
 			return nil, r.err
 		}
-		// BUG: 成功读完应答未 CloseConn
 		return r.ans, nil
 	}
 }
