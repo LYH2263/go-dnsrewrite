@@ -30,18 +30,17 @@ func (e *Engine) ReloadRules(specs []RuleSpec, persistFn PersistFunc) error {
 		candidates = append(candidates, toInternal(s))
 		views = append(views, fromInternal(toInternal(s)))
 	}
-	// BUG: 先生效规则，再持久化；失败仍保留新表
-	e.table.Replace(candidates)
-	e.dirty = true
+	// 先持久化候选规则，成功后才替换内存表；持久化失败时旧规则保持不变。
 	if persistFn != nil {
 		if err := persistFn(views); err != nil {
 			return wrapPersist(err)
 		}
 	} else if e.persistPath != "" {
-		if err := e.flushLocked(); err != nil {
+		if err := e.persistRulesLocked(candidates); err != nil {
 			return err
 		}
 	}
+	e.table.Replace(candidates)
 	e.dirty = persistFn == nil && e.persistPath == ""
 	return nil
 }
@@ -90,9 +89,17 @@ func (e *Engine) flushLocked() error {
 	if e.persistPath == "" {
 		return nil
 	}
-	list := e.table.List()
+	if err := e.persistRulesLocked(e.table.List()); err != nil {
+		return err
+	}
+	e.dirty = false
+	return nil
+}
+
+// persistRulesLocked 将给定规则快照刷盘；不改动内存表与脏标记。调用方持锁。
+func (e *Engine) persistRulesLocked(rules []rule.Rule) error {
 	snap := persist.Snapshot{Version: 1}
-	for _, r := range list {
+	for _, r := range rules {
 		snap.Rules = append(snap.Rules, persist.RuleJSON{
 			ID: r.ID, Pattern: r.Pattern, Kind: string(r.Kind),
 			Action: string(r.Action), Targets: append([]string(nil), r.Targets...),
@@ -102,6 +109,5 @@ func (e *Engine) flushLocked() error {
 	if err := persist.Save(e.persistPath, snap); err != nil {
 		return wrapPersist(err)
 	}
-	e.dirty = false
 	return nil
 }
