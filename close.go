@@ -22,7 +22,7 @@ func (e *Engine) Close() error {
 	}
 	if e.up != nil {
 		e.up.Close()
-		// BUG: Close 后未将 up 置 nil，与 Resolve 缺防护叠加仍可能误用上游
+		e.up = nil // 置 nil：关停后 Resolve 不再触碰转发客户端
 	}
 	if e.cache != nil {
 		e.cache.Clear()

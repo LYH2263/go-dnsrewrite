@@ -37,9 +37,10 @@ func (e *Engine) ResolveContext(ctx context.Context, q Question) (*Answer, error
 	defUp := e.defaultUpstream
 	e.mu.Unlock()
 
-	// BUG: Close 后不检查 closed/nil upstream，直接解引用
-	_ = closed
-	up.SetTimeout(0)
+	// 关停后稳定返回已关闭，不再触碰转发客户端（Close 已将 up 置 nil）。
+	if closed || up == nil {
+		return nil, ErrClosed
+	}
 	if table == nil {
 		return nil, ErrClosed
 	}
@@ -152,7 +153,10 @@ func overrideTTL(ans *Answer, ttl uint32) *Answer {
 }
 
 func (e *Engine) forward(ctx context.Context, up *upstream.Client, addr string, q Question) (*Answer, error) {
-	// BUG: 上游调用点未防护 nil / 已关闭客户端
+	// 防护 nil / 已关闭客户端：关停后稳定返回已关闭，不再触碰上游
+	if up == nil {
+		return nil, ErrClosed
+	}
 	uq := upstream.Question{Name: q.Name, Type: uint16(q.Type), Class: q.Class}
 	ua, err := up.Exchange(ctx, addr, uq)
 	if err != nil {
