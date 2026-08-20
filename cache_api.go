@@ -94,7 +94,7 @@ func fromEntry(ent *cache.Entry) *Answer {
 	for _, rr := range ent.Answers {
 		ans.Answers = append(ans.Answers, RR{
 			Name: rr.Name, Type: RRType(rr.Type), Class: rr.Class,
-			TTL: rr.TTL, Data: rr.Data, // BUG: 未拷贝 RDATA
+			TTL: rr.TTL, Data: cache.CloneBytes(rr.Data),
 		})
 	}
 	return ans

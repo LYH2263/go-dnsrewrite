@@ -30,8 +30,8 @@ func CloneEntry(e *Entry) *Entry {
 	if e.Answers != nil {
 		out.Answers = make([]RR, len(e.Answers))
 		for i := range e.Answers {
-			// BUG: RDATA 与库存共享
 			out.Answers[i] = e.Answers[i]
+			out.Answers[i].Data = CloneBytes(e.Answers[i].Data)
 		}
 	}
 	return &out
