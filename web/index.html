@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DNS改写 · dnsrewrite</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>DNS改写引擎</h1>
+    <p>规则匹配 · 应答改写 · 上游转发</p>
+  </header>
+  <main>
+    <section>
+      <h2>规则表</h2>
+      <div id="rules"></div>
+      <form id="add-form">
+        <input name="id" placeholder="id" required />
+        <input name="pattern" placeholder="example.com 或 *.cdn.local" required />
+        <select name="kind">
+          <option value="exact">exact</option>
+          <option value="suffix">suffix</option>
+          <option value="glob">glob</option>
+        </select>
+        <select name="action">
+          <option value="rewrite">rewrite</option>
+          <option value="forward">forward</option>
+          <option value="refuse">refuse</option>
+        </select>
+        <input name="targets" placeholder="1.2.3.4,5.6.7.8" />
+        <input name="upstream" placeholder="upstream host:port" />
+        <input name="ttl" type="number" placeholder="ttl" value="300" />
+        <button type="submit">添加</button>
+      </form>
+    </section>
+    <section>
+      <h2>试解析</h2>
+      <form id="try-form">
+        <input name="name" placeholder="www.example.com" required />
+        <select name="type">
+          <option value="1">A</option>
+          <option value="28">AAAA</option>
+          <option value="5">CNAME</option>
+          <option value="16">TXT</option>
+        </select>
+        <button type="submit">查询</button>
+      </form>
+      <pre id="try-out"></pre>
+    </section>
+    <section>
+      <h2>统计</h2>
+      <pre id="stats"></pre>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
